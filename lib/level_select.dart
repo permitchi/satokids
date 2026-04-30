@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:satokids/teaching_mode.dart';
 import 'package:satokids/parent_screen.dart';
 import 'package:satokids/study_screen.dart';
-import 'package:satokids/game_screen.dart';
+import 'package:satokids/data/user_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LevelSelectScreen extends StatefulWidget {
@@ -14,6 +14,7 @@ class LevelSelectScreen extends StatefulWidget {
 
 class _LevelSelectScreenState extends State<LevelSelectScreen> {
   int completedLevels = 0;
+  int userPoints = 0;
 
   @override
   void initState() {
@@ -23,8 +24,10 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
 
   Future<void> _loadProgress() async {
     final prefs = await SharedPreferences.getInstance();
+    await UserDataManager.loadUserData();
     setState(() {
       completedLevels = prefs.getInt('completedLevels') ?? 0;
+      userPoints = UserDataManager.userPoints;
     });
   }
 
@@ -32,9 +35,13 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
     if (level >= completedLevels) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('completedLevels', level);
+      
+      // Award points for completing a level
+      await UserDataManager.addPoints(10); 
 
       setState(() {
         completedLevels = level;
+        userPoints = UserDataManager.userPoints;
       });
     }
   }
@@ -72,39 +79,21 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const StudyScreen()),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size(200, 50),
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text("Study", style: TextStyle(fontSize: 18)),
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
                           onPressed: () async {
-                            // 1. Start game and wait for result
+                            // Go to Study Screen first
                             final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => GameScreen(
+                                builder: (context) => StudyScreen(
                                   level: level,
                                   gameType: gameType,
                                 ),
                               ),
                             );
 
-                            // 2. If the user finished the game (returned true)
+                            // If study screen -> game screen returns true
                             if (result == true) {
-                              print("DEBUG: Level $level completed! Updating state..."); // Add this
                               await _completeLevel(level);
-
-                              // 3. Close the dialog so the user sees the updated Level Select screen
                               if (context.mounted) {
                                 Navigator.pop(context);
                               }
@@ -112,10 +101,10 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
                           },
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size(200, 50),
-                            backgroundColor: Colors.green,
+                            backgroundColor: Colors.blue,
                             foregroundColor: Colors.white,
                           ),
-                          child: const Text("Play", style: TextStyle(fontSize: 18)),
+                          child: const Text("Start Level", style: TextStyle(fontSize: 18)),
                         ),
                       ],
                     ),
@@ -146,11 +135,34 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Level Selection"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: false,
         actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.orangeAccent,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.stars, color: Colors.white, size: 20),
+                    const SizedBox(width: 4),
+                    Text(
+                      "$userPoints",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
           PopupMenuButton<int>(
             icon: const Icon(Icons.settings),
             onSelected: (value) {
