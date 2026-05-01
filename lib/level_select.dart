@@ -3,6 +3,7 @@ import 'package:satokids/teaching_mode.dart';
 import 'package:satokids/parent_screen.dart';
 import 'package:satokids/study_screen.dart';
 import 'package:satokids/data/user_data.dart';
+import 'package:satokids/customize_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LevelSelectScreen extends StatefulWidget {
@@ -24,11 +25,46 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
 
   Future<void> _loadProgress() async {
     final prefs = await SharedPreferences.getInstance();
-    await UserDataManager.loadUserData();
+    bool rewardClaimed = await UserDataManager.loadUserData();
     setState(() {
       completedLevels = prefs.getInt('completedLevels') ?? 0;
       userPoints = UserDataManager.userPoints;
     });
+
+    if (rewardClaimed) {
+      _showDailyRewardDialog();
+    }
+  }
+
+  void _showDailyRewardDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.stars, color: Colors.orangeAccent),
+            SizedBox(width: 8),
+            Text("Daily Reward!"),
+          ],
+        ),
+        content: const Text(
+          "Welcome back! You've received 15 points for logging in today. Come back tomorrow for more rewards!",
+          style: TextStyle(fontSize: 16),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orangeAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text("Awesome!"),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _completeLevel(int level) async {
@@ -37,7 +73,8 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
       await prefs.setInt('completedLevels', level);
       
       // Award points for completing a level
-      await UserDataManager.addPoints(10); 
+      await UserDataManager.addPoints(15);
+      await UserDataManager.logLevelCompletion(level);
 
       setState(() {
         completedLevels = level;
@@ -46,12 +83,56 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
     }
   }
 
-    void _showLevelDialog(int level) {
+  void _showPinDialog() {
+    final pinController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Enter Parent PIN"),
+        content: TextField(
+          controller: pinController,
+          keyboardType: TextInputType.number,
+          maxLength: 4,
+          obscureText: true,
+          decoration: const InputDecoration(hintText: "4-digit PIN"),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (pinController.text == UserDataManager.parentPin) {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ParentModeScreen()),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Incorrect PIN")),
+                );
+              }
+            },
+            child: const Text("Unlock"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLevelDialog(int level) {
     // Level 1, 4, 7... -> Game Type 1
     // Level 2, 5, 8... -> Game Type 2
     // Level 3, 6, 9... -> Game Type 3
     int gameType = level % 3;
     if (gameType == 0) gameType = 3;
+
+    String gameName = "Mini-game $gameType";
+    if (level == 10) {
+      gameName = "True/False Game";
+    }
 
     showDialog(
       context: context,
@@ -71,7 +152,7 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
                       style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      "Mini-game $gameType",
+                      gameName,
                       style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 30),
@@ -137,42 +218,13 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
         title: const Text("Level Selection"),
         automaticallyImplyLeading: false,
         actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.orangeAccent,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.stars, color: Colors.white, size: 20),
-                    const SizedBox(width: 4),
-                    Text(
-                      "$userPoints",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
           PopupMenuButton<int>(
             icon: const Icon(Icons.settings),
             onSelected: (value) {
               if (value == 0) {
                 Navigator.of(context).popUntil((route) => route.isFirst);
               } else if (value == 1) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ParentModeScreen()),
-                );
+                _showPinDialog();
               } else if (value == 2) {
                 Navigator.push(
                   context,
@@ -222,7 +274,7 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
             spacing: 20,
             runSpacing: 20,
             alignment: WrapAlignment.center,
-            children: List.generate(15, (index) {
+            children: List.generate(10, (index) {
               int level = index + 1;
               bool isUnlocked = level <= completedLevels + 1;
               bool isCompleted = level <= completedLevels;
@@ -234,8 +286,8 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
                   style: ElevatedButton.styleFrom(
                     shape: const CircleBorder(),
                     padding: const EdgeInsets.all(0),
-                    backgroundColor: isCompleted 
-                        ? Colors.green 
+                    backgroundColor: isCompleted
+                        ? Colors.green
                         : (isUnlocked ? Colors.blue : Colors.grey),
                   ),
                   onPressed: isUnlocked ? () => _showLevelDialog(level) : null,
@@ -259,6 +311,53 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
             }),
           ),
         ),
+      ),
+
+
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.orangeAccent,
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.stars, color: Colors.white, size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  "$userPoints",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CustomizeScreen()),
+              );
+            },
+            backgroundColor: Colors.purple,
+            child: const Icon(Icons.card_giftcard, color: Colors.white),
+          ),
+        ],
       ),
     );
   }

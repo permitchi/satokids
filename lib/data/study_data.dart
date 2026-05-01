@@ -17,15 +17,18 @@ StudyContent getStudyContent(int level) {
   String category;
   String instruction;
 
-  if (level <= 5) {
+  if (level <= 3) {
     category = "Animals";
     instruction = "Look at these animals and remember their names!";
-  } else if (level <= 10) {
+  } else if (level <= 6) {
     category = "Colors";
     instruction = "Let's learn these bright colors!";
-  } else {
+  } else if (level <= 9) {
     category = "Objects";
     instruction = "These are things you can find around you!";
+  } else {
+    category = "Grand Challenge";
+    instruction = "Show what you've learned in the final test!";
   }
 
   return StudyContent(

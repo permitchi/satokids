@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'data/user_data.dart';
 import 'level_select.dart';
+import 'setup_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,11 +14,12 @@ Future<void> main() async {
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]).then((_) {
-    runApp(const MaterialApp(
+    runApp(MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: StartScreen(),
+      home: UserDataManager.isSetupComplete ? const StartScreen() : const SetupScreen(),
     ));
-  });
+  },
+);
 }
 
 class StartScreen extends StatelessWidget {
@@ -134,7 +136,7 @@ class _EmotionScreenState extends State<EmotionScreen> {
               color: isSelected ? color : Colors.white,
               shape: BoxShape.circle,
               border: Border.all(color: color, width: 3),
-              boxShadow: isSelected ? [BoxShadow(color: color.withOpacity(0.5), blurRadius: 10)] : [],
+              boxShadow: isSelected ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 10)] : [],
             ),
             child: Icon(
               icon,

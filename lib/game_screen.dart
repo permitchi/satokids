@@ -3,6 +3,7 @@ import 'data/level_data.dart';
 import 'minigames/matching_game.dart';
 import 'minigames/scrambled_word_game.dart';
 import 'minigames/memory_game.dart';
+import 'minigames/true_false_game.dart';
 
 class GameScreen extends StatefulWidget {
   final int level;
@@ -116,6 +117,12 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildMinigameUI() {
     final items = getLevelItems(widget.level);
+    
+    // Exception for Level 10: True/False Game
+    if (widget.level == 10) {
+      return TrueFalseGame(items: items, onFinish: _finishGame);
+    }
+
     switch (widget.gameType) {
       case 1:
         return MatchingGame(items: items, onFinish: _finishGame);

@@ -76,7 +76,7 @@ class _MatchingGameState extends State<MatchingGame> {
                         margin: const EdgeInsets.all(8),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isPaired ? Colors.green.withOpacity(0.1) : Colors.white,
+                          color: isPaired ? Colors.green.withValues(alpha: 0.1) : Colors.white,
                           border: Border.all(
                             color: isSelected ? Colors.blue : (isPaired ? Colors.green : Colors.grey),
                             width: 3,
@@ -107,7 +107,7 @@ class _MatchingGameState extends State<MatchingGame> {
                         margin: const EdgeInsets.all(8),
                         padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
                         decoration: BoxDecoration(
-                          color: isPaired ? Colors.green.withOpacity(0.1) : Colors.white,
+                          color: isPaired ? Colors.green.withValues(alpha: 0.1) : Colors.white,
                           border: Border.all(
                             color: isPaired ? Colors.green : Colors.grey,
                             width: 2,
