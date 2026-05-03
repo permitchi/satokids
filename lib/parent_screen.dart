@@ -20,36 +20,40 @@ class _ParentModeScreenState extends State<ParentModeScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Text(isOldPinVerified ? "Set New PIN" : "Verify Old PIN"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (!isOldPinVerified)
-                    TextField(
-                      controller: oldPinController,
-                      keyboardType: TextInputType.number,
-                      maxLength: 4,
-                      obscureText: true,
-                      decoration: const InputDecoration(labelText: "Current PIN"),
-                    )
-                  else ...[
-                    TextField(
-                      controller: newPinController,
-                      keyboardType: TextInputType.number,
-                      maxLength: 4,
-                      obscureText: true,
-                      decoration: const InputDecoration(labelText: "New PIN"),
-                    ),
-                    TextField(
-                      controller: confirmPinController,
-                      keyboardType: TextInputType.number,
-                      maxLength: 4,
-                      obscureText: true,
-                      decoration: const InputDecoration(labelText: "Confirm New PIN"),
-                    ),
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(viewInsets: EdgeInsets.zero),
+              child: AlertDialog(
+                title: Text(isOldPinVerified ? "Set New PIN" : "Verify Old PIN"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (!isOldPinVerified)
+                      TextField(
+                        controller: oldPinController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                        obscureText: true,
+                        decoration: const InputDecoration(labelText: "Current PIN"),
+                      )
+                    else ...[
+                      TextField(
+                        controller: newPinController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                        obscureText: true,
+                        decoration: const InputDecoration(labelText: "New PIN"),
+                      ),
+                      TextField(
+                        controller: confirmPinController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                        obscureText: true,
+                        decoration: const InputDecoration(labelText: "Confirm New PIN"),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -89,12 +93,13 @@ class _ParentModeScreenState extends State<ParentModeScreen> {
                   child: Text(isOldPinVerified ? "Update PIN" : "Verify"),
                 ),
               ],
-            );
-          },
-        );
-      },
-    );
-  }
+            ),
+          );
+        },
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -106,6 +111,7 @@ class _ParentModeScreenState extends State<ParentModeScreen> {
         UserDataManager.excitedPoints;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text("Parent Dashboard"),
         backgroundColor: Colors.blueAccent,

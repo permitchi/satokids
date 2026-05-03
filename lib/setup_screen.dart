@@ -35,9 +35,11 @@ class _SetupScreenState extends State<SetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
-      body: Center(
-        child: SingleChildScrollView(
+      body: SingleChildScrollView(
+        child: Container(
+          height: MediaQuery.of(context).size.height,
           padding: const EdgeInsets.all(30),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -78,6 +80,8 @@ class _SetupScreenState extends State<SetupScreen> {
                 ),
                 child: const Text("Finish Setup", style: TextStyle(fontSize: 20)),
               ),
+              // Dynamic space for keyboard when it appears
+              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
             ],
           ),
         ),

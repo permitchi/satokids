@@ -87,16 +87,20 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
     final pinController = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Enter Parent PIN"),
-        content: TextField(
-          controller: pinController,
-          keyboardType: TextInputType.number,
-          maxLength: 4,
-          obscureText: true,
-          decoration: const InputDecoration(hintText: "4-digit PIN"),
-        ),
-        actions: [
+      builder: (context) => MediaQuery(
+        // Override viewInsets to zero so the dialog stays in place (under the keyboard)
+        data: MediaQuery.of(context).copyWith(viewInsets: EdgeInsets.zero),
+        child: AlertDialog(
+          scrollable: true,
+          title: const Text("Enter Parent PIN"),
+          content: TextField(
+            controller: pinController,
+            keyboardType: TextInputType.number,
+            maxLength: 4,
+            obscureText: true,
+            decoration: const InputDecoration(hintText: "4-digit PIN"),
+          ),
+          actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text("Cancel"),
@@ -119,8 +123,9 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _showLevelDialog(int level) {
     // Level 1, 4, 7... -> Game Type 1
@@ -144,52 +149,54 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 20.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "Level $level",
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      gameName,
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                    ),
-                    const SizedBox(height: 30),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () async {
-                            // Go to Study Screen first
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => StudyScreen(
-                                  level: level,
-                                  gameType: gameType,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Level $level",
+                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        gameName,
+                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 30),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () async {
+                              // Go to Study Screen first
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => StudyScreen(
+                                    level: level,
+                                    gameType: gameType,
+                                  ),
                                 ),
-                              ),
-                            );
-
-                            // If study screen -> game screen returns true
-                            if (result == true) {
-                              await _completeLevel(level);
-                              if (context.mounted) {
-                                Navigator.pop(context);
+                              );
+    
+                              // If study screen -> game screen returns true
+                              if (result == true) {
+                                await _completeLevel(level);
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                }
                               }
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size(200, 50),
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
+                            },
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(200, 50),
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text("Start Level", style: TextStyle(fontSize: 18)),
                           ),
-                          child: const Text("Start Level", style: TextStyle(fontSize: 18)),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
               Positioned(
