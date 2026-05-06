@@ -37,7 +37,10 @@ class _MatchingGameState extends State<MatchingGame> {
       widget.onFinish();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Match all items first!")),
+        const SnackBar(
+          content: Text("Match all items first!"),
+          duration: Duration(milliseconds: 700),
+        ),
       );
     }
   }

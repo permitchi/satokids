@@ -30,10 +30,12 @@ class UserDataManager {
 
   static bool isSetupComplete = false;
   static String parentPin = '0000';
+  static bool emotionRecordedThisSession = false;
+  static bool dailyRewardClaimed = false;
 
   /// Load points and emotion history from persistent storage.
   /// Returns true if a daily login reward was claimed.
-  static Future<bool> loadUserData() async {
+  static Future<bool> loadUserData({bool awardDailyPoints = true}) async {
     final prefs = await SharedPreferences.getInstance();
     userPoints = prefs.getInt('userPoints') ?? 0;
     
@@ -63,13 +65,15 @@ class UserDataManager {
       weeklyBoughtItems = prefs.getStringList('weeklyBoughtItems') ?? [];
     }
 
-    bool rewardClaimed = false;
     // Check for Daily Login Reward
     String today = DateTime.now().toString().split(' ')[0]; // YYYY-MM-DD
     if (lastLoginDate != today) {
-      userPoints += 15;
+      if (awardDailyPoints) {
+        userPoints += 15;
+        dailyRewardClaimed = true; // Set to true if it's a new day
+      }
       lastLoginDate = today;
-      rewardClaimed = true;
+      dailyRewardClaimed = true;
       await _saveToDisk();
     }
 
@@ -91,12 +95,13 @@ class UserDataManager {
       emotionAnswers = storedEmotions.map((e) => int.parse(e)).toList();
     }
 
-    return rewardClaimed;
+    return dailyRewardClaimed;
   }
 
   /// Records an emotion selection and updates points based on the choice
   static Future<void> recordEmotion(int emotionIndex) async {
     emotionAnswers.add(emotionIndex);
+    emotionRecordedThisSession = true;
 
     // Points logic based on emotion check
     switch (emotionIndex) {

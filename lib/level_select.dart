@@ -25,14 +25,17 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
 
   Future<void> _loadProgress() async {
     final prefs = await SharedPreferences.getInstance();
-    bool rewardClaimed = await UserDataManager.loadUserData();
+    await UserDataManager.loadUserData();
     setState(() {
       completedLevels = prefs.getInt('completedLevels') ?? 0;
       userPoints = UserDataManager.userPoints;
     });
 
-    if (rewardClaimed) {
-      _showDailyRewardDialog();
+    if (UserDataManager.dailyRewardClaimed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showDailyRewardDialog();
+      });
+      UserDataManager.dailyRewardClaimed = false; // Reset so it only shows once
     }
   }
 
@@ -68,19 +71,20 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
   }
 
   Future<void> _completeLevel(int level) async {
-    if (level >= completedLevels) {
+    await UserDataManager.addPoints(15);
+    await UserDataManager.logLevelCompletion(level);
+
+    if (level > completedLevels) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('completedLevels', level);
-      
-      // Award points for completing a level
-      await UserDataManager.addPoints(15);
-      await UserDataManager.logLevelCompletion(level);
-
       setState(() {
         completedLevels = level;
-        userPoints = UserDataManager.userPoints;
       });
     }
+
+    setState(() {
+      userPoints = UserDataManager.userPoints;
+    });
   }
 
   void _showPinDialog() {
@@ -115,7 +119,10 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
                 );
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Incorrect PIN")),
+                  const SnackBar(
+                    content: Text("Incorrect PIN"),
+                    duration: Duration(milliseconds: 700),
+                  ),
                 );
               }
             },
@@ -221,106 +228,134 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Level Selection"),
-        automaticallyImplyLeading: false,
-        actions: [
-          PopupMenuButton<int>(
-            icon: const Icon(Icons.settings),
-            onSelected: (value) {
-              if (value == 0) {
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              } else if (value == 1) {
-                _showPinDialog();
-              } else if (value == 2) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const TeachingScreen()),
-                );
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 0,
-                child: Row(
-                  children: [
-                    Icon(Icons.exit_to_app, color: Colors.black),
-                    SizedBox(width: 8),
-                    Text("Quit to Start"),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 80, 20, 20),
+              child: Center(
+                child: Wrap(
+                  spacing: 20,
+                  runSpacing: 20,
+                  alignment: WrapAlignment.center,
+                  children: List.generate(10, (index) {
+                    int level = index + 1;
+                    bool isUnlocked = level <= completedLevels + 1;
+                    bool isCompleted = level <= completedLevels;
+
+                    return SizedBox(
+                      width: 100,
+                      height: 100,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          shape: const CircleBorder(),
+                          padding: const EdgeInsets.all(0),
+                          backgroundColor: isCompleted
+                              ? Colors.green
+                              : (isUnlocked ? Colors.blue : Colors.grey),
+                        ),
+                        onPressed: isUnlocked ? () => _showLevelDialog(level) : null,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "$level",
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            if (!isUnlocked)
+                              const Icon(Icons.lock, color: Colors.white, size: 20),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ),
+          ),
+          // Settings/Back replacement button
+          Positioned(
+            top: 10,
+            left: 10,
+            child: SafeArea(
+              child: CircleAvatar(
+                backgroundColor: Colors.white.withValues(alpha: 0.8),
+                child: PopupMenuButton<int>(
+                  icon: const Icon(Icons.menu, color: Colors.blue),
+                  onSelected: (value) {
+                    if (value == 0) {
+                      Navigator.of(context).popUntil((route) => route.isFirst);
+                    } else if (value == 1) {
+                      _showPinDialog();
+                    } else if (value == 2) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const TeachingScreen()),
+                      );
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 0,
+                      child: Row(
+                        children: [
+                          Icon(Icons.exit_to_app, color: Colors.black),
+                          SizedBox(width: 8),
+                          Text("Quit to Start"),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 1,
+                      child: Row(
+                        children: [
+                          Icon(Icons.person, color: Colors.black),
+                          SizedBox(width: 8),
+                          Text("Parent Mode"),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 2,
+                      child: Row(
+                        children: [
+                          Icon(Icons.school, color: Colors.black),
+                          SizedBox(width: 8),
+                          Text("Teaching Screen"),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const PopupMenuItem(
-                value: 1,
-                child: Row(
-                  children: [
-                    Icon(Icons.person, color: Colors.black),
-                    SizedBox(width: 8),
-                    Text("Parent Mode"),
-                  ],
+            ),
+          ),
+          // Screen Title
+          Positioned(
+            top: 20,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: IgnorePointer(
+                child: Center(
+                  child: Text(
+                    "Level Selection",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue[800],
+                    ),
+                  ),
                 ),
               ),
-              const PopupMenuItem(
-                value: 2,
-                child: Row(
-                  children: [
-                    Icon(Icons.school, color: Colors.black),
-                    SizedBox(width: 8),
-                    Text("Teaching Screen"),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Wrap(
-            spacing: 20,
-            runSpacing: 20,
-            alignment: WrapAlignment.center,
-            children: List.generate(10, (index) {
-              int level = index + 1;
-              bool isUnlocked = level <= completedLevels + 1;
-              bool isCompleted = level <= completedLevels;
-
-              return SizedBox(
-                width: 100,
-                height: 100,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    shape: const CircleBorder(),
-                    padding: const EdgeInsets.all(0),
-                    backgroundColor: isCompleted
-                        ? Colors.green
-                        : (isUnlocked ? Colors.blue : Colors.grey),
-                  ),
-                  onPressed: isUnlocked ? () => _showLevelDialog(level) : null,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "$level",
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      if (!isUnlocked)
-                        const Icon(Icons.lock, color: Colors.white, size: 20),
-                    ],
-                  ),
-                ),
-              );
-            }),
-          ),
-        ),
-      ),
-
-
       floatingActionButton: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
@@ -355,11 +390,15 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
           ),
           const SizedBox(width: 12),
           FloatingActionButton(
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const CustomizeScreen()),
               );
+              // Refresh points when returning from customize shop
+              setState(() {
+                userPoints = UserDataManager.userPoints;
+              });
             },
             backgroundColor: Colors.purple,
             child: const Icon(Icons.card_giftcard, color: Colors.white),

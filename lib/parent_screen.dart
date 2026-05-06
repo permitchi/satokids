@@ -69,23 +69,35 @@ class _ParentModeScreenState extends State<ParentModeScreen> {
                         });
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Incorrect current PIN")),
+                          const SnackBar(
+                            content: Text("Incorrect current PIN"),
+                            duration: Duration(milliseconds: 700),
+                          ),
                         );
                       }
                     } else {
                       if (newPinController.text.length != 4) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("PIN must be 4 digits")),
+                          const SnackBar(
+                            content: Text("PIN must be 4 digits"),
+                            duration: Duration(milliseconds: 700),
+                          ),
                         );
                       } else if (newPinController.text != confirmPinController.text) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("PINs do not match")),
+                          const SnackBar(
+                            content: Text("PINs do not match"),
+                            duration: Duration(milliseconds: 700),
+                          ),
                         );
                       } else {
                         UserDataManager.updatePin(newPinController.text);
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("PIN updated successfully")),
+                          const SnackBar(
+                            content: Text("PIN updated successfully"),
+                            duration: Duration(milliseconds: 700),
+                          ),
                         );
                       }
                     }
@@ -112,106 +124,136 @@ class _ParentModeScreenState extends State<ParentModeScreen> {
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      appBar: AppBar(
-        title: const Text("Parent Dashboard"),
-        backgroundColor: Colors.blueAccent,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.lock_reset),
-            onPressed: _showResetPinDialog,
-            tooltip: "Reset PIN",
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top Summary Card
+                _buildSummaryCard(total),
+                const SizedBox(height: 32),
+                
+                const Text(
+                  "How has your child been feeling?",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Emotion distribution based on $total check-ins",
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 24),
+                
+                // Emotion Progress Bars
+                _buildEmotionBar(
+                  label: "Happy",
+                  count: UserDataManager.happyPoints,
+                  total: total,
+                  color: Colors.orange,
+                  icon: Icons.sentiment_very_satisfied,
+                ),
+                _buildEmotionBar(
+                  label: "Excited",
+                  count: UserDataManager.excitedPoints,
+                  total: total,
+                  color: Colors.purple,
+                  icon: Icons.auto_awesome,
+                ),
+                _buildEmotionBar(
+                  label: "Neutral",
+                  count: UserDataManager.neutralPoints,
+                  total: total,
+                  color: Colors.blueGrey,
+                  icon: Icons.sentiment_neutral,
+                ),
+                _buildEmotionBar(
+                  label: "Sad",
+                  count: UserDataManager.sadPoints,
+                  total: total,
+                  color: Colors.blue,
+                  icon: Icons.sentiment_very_dissatisfied,
+                ),
+                _buildEmotionBar(
+                  label: "Angry",
+                  count: UserDataManager.angryPoints,
+                  total: total,
+                  color: Colors.red,
+                  icon: Icons.sentiment_dissatisfied,
+                ),
+                const SizedBox(height: 40),
+                
+                const Text(
+                  "Weekly Activity Log",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  "Progress and unlocks reset every 7 days.",
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+                const SizedBox(height: 16),
+                
+                _buildLogSection(
+                  title: "Levels Completed this Week",
+                  icon: Icons.map,
+                  color: Colors.green,
+                  items: UserDataManager.weeklyCompletedLevels.isEmpty 
+                      ? ["No levels completed yet"] 
+                      : UserDataManager.weeklyCompletedLevels.map((l) => "Level $l").toList(),
+                ),
+                _buildLogSection(
+                  title: "Items Bought this Week",
+                  icon: Icons.shopping_bag,
+                  color: Colors.purple,
+                  items: UserDataManager.weeklyBoughtItems.isEmpty 
+                      ? ["No items purchased"] 
+                      : UserDataManager.weeklyBoughtItems,
+                ),
+                const SizedBox(height: 40),
+              ],
+            ),
+          ),
+          // Custom Top Bar
+          Positioned(
+            top: 10,
+            left: 10,
+            right: 10,
+            child: SafeArea(
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.white.withValues(alpha: 0.8),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.blueAccent),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  const Spacer(),
+                  IgnorePointer(
+                    child: Text(
+                      "Parent Dashboard",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent[700],
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  CircleAvatar(
+                    backgroundColor: Colors.white.withValues(alpha: 0.8),
+                    child: IconButton(
+                      icon: const Icon(Icons.lock_reset, color: Colors.blueAccent),
+                      onPressed: _showResetPinDialog,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top Summary Card
-            _buildSummaryCard(total),
-            const SizedBox(height: 32),
-            
-            const Text(
-              "How has your child been feeling?",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Emotion distribution based on $total check-ins",
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 24),
-            
-            // Emotion Progress Bars
-            _buildEmotionBar(
-              label: "Happy",
-              count: UserDataManager.happyPoints,
-              total: total,
-              color: Colors.orange,
-              icon: Icons.sentiment_very_satisfied,
-            ),
-            _buildEmotionBar(
-              label: "Excited",
-              count: UserDataManager.excitedPoints,
-              total: total,
-              color: Colors.purple,
-              icon: Icons.auto_awesome,
-            ),
-            _buildEmotionBar(
-              label: "Neutral",
-              count: UserDataManager.neutralPoints,
-              total: total,
-              color: Colors.blueGrey,
-              icon: Icons.sentiment_neutral,
-            ),
-            _buildEmotionBar(
-              label: "Sad",
-              count: UserDataManager.sadPoints,
-              total: total,
-              color: Colors.blue,
-              icon: Icons.sentiment_very_dissatisfied,
-            ),
-            _buildEmotionBar(
-              label: "Angry",
-              count: UserDataManager.angryPoints,
-              total: total,
-              color: Colors.red,
-              icon: Icons.sentiment_dissatisfied,
-            ),
-            const SizedBox(height: 40),
-            
-            const Text(
-              "Weekly Activity Log",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              "Progress and unlocks reset every 7 days.",
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-            const SizedBox(height: 16),
-            
-            _buildLogSection(
-              title: "Levels Completed this Week",
-              icon: Icons.map,
-              color: Colors.green,
-              items: UserDataManager.weeklyCompletedLevels.isEmpty 
-                  ? ["No levels completed yet"] 
-                  : UserDataManager.weeklyCompletedLevels.map((l) => "Level $l").toList(),
-            ),
-            _buildLogSection(
-              title: "Items Bought this Week",
-              icon: Icons.shopping_bag,
-              color: Colors.purple,
-              items: UserDataManager.weeklyBoughtItems.isEmpty 
-                  ? ["No items purchased"] 
-                  : UserDataManager.weeklyBoughtItems,
-            ),
-            const SizedBox(height: 40),
-          ],
-        ),
       ),
     );
   }

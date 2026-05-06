@@ -18,6 +18,8 @@ class _TrueFalseGameState extends State<TrueFalseGame> with SingleTickerProvider
   late bool isCorrectPair;
   int questionsAnswered = 0;
   final int totalQuestions = 5;
+  bool _showSuccess = false;
+  bool _isProcessing = false;
 
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
@@ -38,12 +40,6 @@ class _TrueFalseGameState extends State<TrueFalseGame> with SingleTickerProvider
     ]).animate(_shakeController);
 
     _nextQuestion();
-  }
-
-  @override
-  void dispose() {
-    _shakeController.dispose();
-    super.dispose();
   }
 
   void _nextQuestion() {
@@ -71,11 +67,24 @@ class _TrueFalseGameState extends State<TrueFalseGame> with SingleTickerProvider
   }
 
   bool _checkAnswer(bool userGuess) {
+    if (_isProcessing) return false;
+
     if (userGuess == isCorrectPair) {
       setState(() {
-        questionsAnswered++;
+        _isProcessing = true;
+        _showSuccess = true;
       });
-      _nextQuestion();
+
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (mounted) {
+          setState(() {
+            _showSuccess = false;
+            _isProcessing = false;
+            questionsAnswered++;
+          });
+          _nextQuestion();
+        }
+      });
       return true;
     } else {
       // Wrong answer - visual feedback
@@ -85,7 +94,7 @@ class _TrueFalseGameState extends State<TrueFalseGame> with SingleTickerProvider
         const SnackBar(
           content: Text("Oops! That's not right. Try again!"),
           backgroundColor: Colors.redAccent,
-          duration: Duration(seconds: 1),
+          duration: const Duration(milliseconds: 700),
         ),
       );
       return false;
@@ -106,10 +115,6 @@ class _TrueFalseGameState extends State<TrueFalseGame> with SingleTickerProvider
           "Is this correct?",
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
-        const Text(
-          "Swipe Right for TRUE, Left for FALSE",
-          style: TextStyle(fontSize: 14, color: Colors.blueGrey),
-        ),
         const SizedBox(height: 20),
         AnimatedBuilder(
           animation: _shakeAnimation,
@@ -119,31 +124,11 @@ class _TrueFalseGameState extends State<TrueFalseGame> with SingleTickerProvider
               child: child,
             );
           },
-          child: SizedBox(
-            height: 250,
-            width: 400,
-            child: Dismissible(
-              key: ValueKey(questionsAnswered + (currentItem.name.hashCode) + (isCorrectPair ? 1 : 0)),
-              confirmDismiss: (direction) async {
-                if (direction == DismissDirection.startToEnd) {
-                  return _checkAnswer(true);
-                } else {
-                  return _checkAnswer(false);
-                }
-              },
-              background: Container(
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.only(left: 40),
-                color: Colors.green.withValues(alpha: 0.3),
-                child: const Icon(Icons.check, size: 60, color: Colors.green),
-              ),
-              secondaryBackground: Container(
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 40),
-                color: Colors.red.withValues(alpha: 0.3),
-                child: const Icon(Icons.close, size: 60, color: Colors.red),
-              ),
-              child: Container(
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                height: 250,
                 width: 400,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -170,7 +155,19 @@ class _TrueFalseGameState extends State<TrueFalseGame> with SingleTickerProvider
                   ],
                 ),
               ),
-            ),
+              if (_showSuccess)
+                Container(
+                  height: 250,
+                  width: 400,
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.check_circle, color: Colors.white, size: 100),
+                  ),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 30),

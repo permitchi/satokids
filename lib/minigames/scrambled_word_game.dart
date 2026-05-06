@@ -37,8 +37,10 @@ class _ScrambledWordGameState extends State<ScrambledWordGame> {
         usedIndices.clear();
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Wrong! Try rescrambling again!"),
-        )
+        const SnackBar(
+          content: Text("Wrong! Try rescrambling again!"),
+          duration: Duration(milliseconds: 700),
+        ),
       );
     }
   }
@@ -116,8 +118,15 @@ class _ScrambledWordGameState extends State<ScrambledWordGame> {
             ),
           ],
         ),
-        if (wrongAttempts >= 2 && !hintRequested)
-          TextButton(onPressed: () => setState(() => hintRequested = true), child: const Text("Need a hint?")),
+        SizedBox(
+          height: 50,
+          child: (wrongAttempts >= 2 && !hintRequested)
+              ? TextButton(
+                  onPressed: () => setState(() => hintRequested = true),
+                  child: const Text("Need a hint?"),
+                )
+              : null,
+        ),
       ],
     );
   }

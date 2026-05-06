@@ -14,12 +14,21 @@ Future<void> main() async {
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]).then((_) {
-    runApp(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: UserDataManager.isSetupComplete ? const StartScreen() : const SetupScreen(),
-    ));
+    runApp(const MyApp());
   },
 );
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: UserDataManager.isSetupComplete ? const StartScreen() : const SetupScreen(),
+    );
+  }
 }
 
 class StartScreen extends StatelessWidget {
@@ -45,10 +54,17 @@ class StartScreen extends StatelessWidget {
               ),
               child: const Text('PLAY', style: TextStyle(fontSize: 24)),
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const EmotionScreen()),
-                );
+                if (UserDataManager.emotionRecordedThisSession) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LevelSelectScreen()),
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const EmotionScreen()),
+                  );
+                }
               },
             ),
           ],

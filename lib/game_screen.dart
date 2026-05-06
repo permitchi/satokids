@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:satokids/data/user_data.dart';
+import 'package:satokids/level_select.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'data/level_data.dart';
 import 'minigames/matching_game.dart';
 import 'minigames/scrambled_word_game.dart';
@@ -17,6 +20,7 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   bool isGameFinished = false;
+  bool _isExiting = false;
 
   void _finishGame() {
     setState(() {
@@ -61,17 +65,34 @@ class _GameScreenState extends State<GameScreen> {
           ),
         ),
       ),
-    ).then((result) {
+    ).then((result) async {
       if (result == true && mounted) {
-        Navigator.pop(context, true);
+        // Save progress before navigating back
+        await UserDataManager.addPoints(15);
+        await UserDataManager.logLevelCompletion(widget.level);
+
+        final prefs = await SharedPreferences.getInstance();
+        int completed = prefs.getInt('completedLevels') ?? 0;
+        if (widget.level > completed) {
+          await prefs.setInt('completedLevels', widget.level);
+        }
+
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const LevelSelectScreen()),
+                (route) => route.isFirst,
+          );
+        }
       }
-    });
+    }
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: isGameFinished,
+      canPop: isGameFinished || _isExiting,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
@@ -94,22 +115,44 @@ class _GameScreenState extends State<GameScreen> {
         );
 
         if (shouldPop == true && context.mounted) {
-          Navigator.of(context).pop();
-        }
+          setState(() {
+            _isExiting = true;
+          });
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const LevelSelectScreen()),
+                (route) => route.isFirst,
+          );        }
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text("Level ${widget.level} - Game ${widget.gameType}"),
-        ),
-        body: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildMinigameUI(),
-              ],
+        body: Stack(
+          children: [
+            Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(top: 80, bottom: 20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildMinigameUI(),
+                  ],
+                ),
+              ),
             ),
-          ),
+            // Back Button
+            Positioned(
+              top: 10,
+              left: 10,
+              child: SafeArea(
+                child: CircleAvatar(
+                  backgroundColor: Colors.white.withValues(alpha: 0.8),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.blue),
+                    onPressed: () => Navigator.maybePop(context),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

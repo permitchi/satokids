@@ -22,135 +22,143 @@ class _CustomizeScreenState extends State<CustomizeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Customize Character"),
-        backgroundColor: Colors.purple,
-        foregroundColor: Colors.white,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.orangeAccent,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.stars, color: Colors.white, size: 20),
-                    const SizedBox(width: 4),
-                    Text(
-                      "${UserDataManager.userPoints}",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final h = constraints.maxHeight;
           final w = constraints.maxWidth;
           
-          return Row(
+          return Stack(
             children: [
-              // Left Side: Character Preview
-              Expanded(
-                flex: 2,
-                child: Container(
-                  color: Colors.grey[100],
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Your Character",
-                          style: TextStyle(
-                            fontSize: (h * 0.05).clamp(18.0, 24.0),
-                            fontWeight: FontWeight.bold,
-                          ),
+              Row(
+                children: [
+                  // Left Side: Character Preview
+                  Expanded(
+                    flex: 2,
+                    child: Container(
+                      color: Colors.grey[100],
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(height: h * 0.02),
+                            Container(
+                              width: (h * 0.45).clamp(150.0, w * 0.4),
+                              height: h * 0.75,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.purple, width: 3),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  _buildPreviewItem("Accessory", UserDataManager.selectedAccessory, h * 0.75),
+                                  _buildPreviewItem("Hair", UserDataManager.selectedHair, h * 0.75),
+                                  _buildPreviewItem("Top", UserDataManager.selectedTop, h * 0.75),
+                                  _buildPreviewItem("Pants", UserDataManager.selectedPants, h * 0.75),
+                                  _buildPreviewItem("Shoes", UserDataManager.selectedShoes, h * 0.75),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(height: h * 0.02),
-                        Container(
-                          width: (h * 0.45).clamp(150.0, w * 0.4),
-                          height: h * 0.75,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.purple, width: 3),
+                      ),
+                    ),
+                  ),
+                  // Right Side: Customization Options
+                  Expanded(
+                    flex: 3,
+                    child: Padding(
+                      padding: EdgeInsets.all(w * 0.03),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 20), // Margin for title and back button
+                          Text(
+                            "Select Items",
+                            style: TextStyle(
+                              fontSize: (h * 0.06).clamp(20.0, 28.0),
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _buildPreviewItem("Accessory", UserDataManager.selectedAccessory, h * 0.75),
-                              _buildPreviewItem("Hair", UserDataManager.selectedHair, h * 0.75),
-                              _buildPreviewItem("Top", UserDataManager.selectedTop, h * 0.75),
-                              _buildPreviewItem("Pants", UserDataManager.selectedPants, h * 0.75),
-                              _buildPreviewItem("Shoes", UserDataManager.selectedShoes, h * 0.75),
-                            ],
+                          Text(
+                            "Unlock new items for $unlockCost points each!",
+                            style: TextStyle(
+                              fontSize: (h * 0.035).clamp(12.0, 16.0),
+                              color: Colors.grey,
+                            ),
                           ),
-                        ),
-                      ],
+                          SizedBox(height: h * 0.02),
+                          Expanded(
+                            child: ListView(
+                              children: options.entries.map((entry) {
+                                return _buildOptionCategory(entry.key, entry.value);
+                              }).toList(),
+                            ),
+                          ),
+                          SizedBox(height: h * 0.02),
+                          SizedBox(
+                            width: double.infinity,
+                            height: (h * 0.12).clamp(40.0, 60.0),
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.pop(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.purple,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              child: Text(
+                                "Save & Exit",
+                                style: TextStyle(fontSize: (h * 0.045).clamp(16.0, 20.0)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              // Back Button
+              Positioned(
+                top: 10,
+                left: 10,
+                child: SafeArea(
+                  child: CircleAvatar(
+                    backgroundColor: Colors.white.withValues(alpha: 0.8),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.purple),
+                      onPressed: () => Navigator.pop(context),
                     ),
                   ),
                 ),
               ),
-              // Right Side: Customization Options
-              Expanded(
-                flex: 3,
-                child: Padding(
-                  padding: EdgeInsets.all(w * 0.03),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Select Items",
-                        style: TextStyle(
-                          fontSize: (h * 0.06).clamp(20.0, 28.0),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        "Unlock new items for $unlockCost points each!",
-                        style: TextStyle(
-                          fontSize: (h * 0.035).clamp(12.0, 16.0),
-                          color: Colors.grey,
-                        ),
-                      ),
-                      SizedBox(height: h * 0.02),
-                      Expanded(
-                        child: ListView(
-                          children: options.entries.map((entry) {
-                            return _buildOptionCategory(entry.key, entry.value);
-                          }).toList(),
-                        ),
-                      ),
-                      SizedBox(height: h * 0.02),
-                      SizedBox(
-                        width: double.infinity,
-                        height: (h * 0.12).clamp(40.0, 60.0),
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.purple,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          child: Text(
-                            "Save & Exit",
-                            style: TextStyle(fontSize: (h * 0.045).clamp(16.0, 20.0)),
+              // Points Display
+              Positioned(
+                top: 10,
+                right: 10,
+                child: SafeArea(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.orangeAccent,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.stars, color: Colors.white, size: 20),
+                        const SizedBox(width: 4),
+                        Text(
+                          "${UserDataManager.userPoints}",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -218,14 +226,20 @@ class _CustomizeScreenState extends State<CustomizeScreen> {
                   if (mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Unlocked $itemName!")),
+                      SnackBar(
+                        content: Text("Unlocked $itemName!"),
+                        duration: const Duration(milliseconds: 700),
+                      ),
                     );
                   }
                 } else {
                   if (mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Not enough points!")),
+                      const SnackBar(
+                        content: Text("Not enough points!"),
+                        duration: Duration(milliseconds: 700),
+                      ),
                     );
                   }
                 }

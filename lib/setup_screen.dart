@@ -15,7 +15,10 @@ class _SetupScreenState extends State<SetupScreen> {
   void _saveSetup() async {
     if (_pinController.text.length < 4) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter a 4-digit PIN")),
+        const SnackBar(
+          content: Text("Please enter a 4-digit PIN"),
+          duration: Duration(milliseconds: 700),
+        ),
       );
       return;
     }
